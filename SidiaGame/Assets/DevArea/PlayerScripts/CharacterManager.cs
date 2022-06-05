@@ -1,6 +1,8 @@
-﻿using System.Collections;
+﻿using SidiaGame.GM;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace SidiaGame.PlayerCode
 {
@@ -10,18 +12,24 @@ namespace SidiaGame.PlayerCode
         public class AdminArea
         {
             [Range(1, 100)]
-            public float Health=1;
+            public int Health=1;
             [Range(1, 100)]
-            public float Atack=1;
+            public int Atack=1;
 
             public Vector3 Offset = new Vector3(0,0.5f,0);
         }
         [Tooltip("Character settings control section")]
         public AdminArea GM;
 
+
+        [SerializeField] Animator _anim;
+
+        GameplayController GameMaster;
+        public GameObject Pin;
+
         #region AtackArea
         bool AtackOpen;
-
+     
         #endregion
 
 
@@ -37,7 +45,7 @@ namespace SidiaGame.PlayerCode
         /// <summary>
         /// Remaining moves for this turn
         /// </summary>
-        int Move;
+       public int Move;
 
         RaycastHit _right;
         RaycastHit _left;
@@ -45,27 +53,86 @@ namespace SidiaGame.PlayerCode
         RaycastHit _backward;
         #endregion
 
+
+        Vector3 _Move;
+
+
+        #region CanvasHud
+        public GameObject ButtonAtack;
+        public GameObject EndPhase;
+
+        public int IamPlayer;
+        int AtualTurn;
+        bool MyTurn;
+        #endregion
+
+        private void Start()
+        {
+            GameMaster = FindObjectOfType<GameplayController>();
+        }
         private void Update()
         {
-            ControllerMove();  
+            Move = Mathf.Clamp(Move, 0, 3);
+            TurnControll();
+            if (MyTurn)
+            {
+                ControllerMove();
+            }
+            Pin.SetActive(MyTurn);
+            Pin.transform.Rotate(0,0, 60 * Time.deltaTime);
         }
 
+        void PickUpItem()
+        {
+
+        }
+
+        void TurnControll()
+        {
+            AtualTurn = GameMaster.PlayerTurn;
+            if (AtualTurn % 2 == 0)
+            {
+                if (IamPlayer == 1)
+                    MyTurn = false;
+                else
+                    MyTurn = true;
+            }
+            else
+            {
+                if (IamPlayer == 1)
+                    MyTurn = true;
+                else
+                    MyTurn = false;
+            }
+        }
         void ControllerMove()
         {
+          
+               
             if (!inMove)
             {
                 if (HorizontalMove() != 0)
                     StartMove(new Vector3(HorizontalMove(), 0, 0));
                 else if (VerticalMove() != 0)
                     StartMove(new Vector3(0, 0, VerticalMove()));
+                
+            }
+            else
+            {
+                if (transform.position != _Move)
+                {
+                    transform.LookAt(_Move);
+                    transform.position = Vector3.MoveTowards(transform.position, _Move,Time.deltaTime);
+                    _anim.SetInteger("Action", 1);
+                }
+                else
+                {
+                    inMove = false;
+                    VerifyAtack();
+                    _anim.SetInteger("Action", 0);
+                }
             }
         }
-
-        void ControllerAtack()
-        {
-
-        }
-
         /// <summary>
         /// First step to move player
         /// </summary>
@@ -78,21 +145,15 @@ namespace SidiaGame.PlayerCode
                 bool Inuse = Physics.Raycast(transform.position + GM.Offset, _move, 1);
                 if (!Inuse)
                 {
-                    transform.position = transform.position + _move;
+                    _Move = transform.position + _move;
                 }
-                StartCoroutine(InMoviment());
+                else
+                {
+                    inMove = false;
+                }
+                
                 Move--;
             }
-        }
-        /// <summary>
-        /// Use to reset state of movement
-        /// </summary>
-        /// <returns></returns>
-        IEnumerator InMoviment()
-        {
-            yield return new WaitForSeconds(0.1f);
-            inMove = false;
-            VerifyAtack();
         }
 
         /// <summary>
@@ -100,18 +161,62 @@ namespace SidiaGame.PlayerCode
         /// </summary>
         void VerifyAtack()
         {
-            if (Physics.Raycast(transform.position + GM.Offset, transform.forward, out _forward, 1))
+            EndPhase.SetActive(false);
+            AtackOpen = false;
+            float EnemyDistance = 0;
+            if (IamPlayer == 1)
+                EnemyDistance = Vector3.Distance(transform.position, GameMaster.P2.transform.position);
+            else
+                EnemyDistance = Vector3.Distance(transform.position, GameMaster.P1.transform.position);
+
+            if (EnemyDistance <= 2)
                 AtackOpen = true;
-            if (Physics.Raycast(transform.position + GM.Offset, -transform.forward, out _backward, 1))
-                AtackOpen = true;
-            if (Physics.Raycast(transform.position + GM.Offset, transform.right, out _right, 1))
-                AtackOpen = true;
-            if (Physics.Raycast(transform.position + GM.Offset, -transform.right, out _left, 1))
-                AtackOpen = true;
+
+            if (Move <= 0 && AtackOpen == false)
+                GameMaster.ChangeTurn();
+            else if (Move <= 0 && AtackOpen == true)
+                EndPhase.SetActive(AtackOpen);
+
+            ButtonAtack.SetActive(AtackOpen);
         }
 
-        
 
+        public void ConfirmAtack(CharacterManager alvo)
+        {
+            
+            transform.LookAt(alvo.transform.position);
+            _anim.SetInteger("Action", 2);
+            alvo.SetDamage(GM.Atack);
+            if (Move <= 0)
+                GameMaster.ChangeTurn();
+
+        }
+        public void ResetAtack()
+        {
+            _anim.SetInteger("Action", 0);
+            if (MyTurn)
+                if (Move <= 1)
+                    GameMaster.ChangeTurn();
+                else
+                    Move--;
+        }
+        public void SetDamage(int _damage)
+        {
+            GM.Health -= _damage;
+            if (MyTurn)
+                if (Move <= 1)
+                    GameMaster.ChangeTurn();
+                else
+                    Move--;
+        }
+
+        public void OnChangeTurn()
+        {
+            
+            Move = 3;
+            AtackOpen = false;
+            VerifyAtack();
+        }
     }
 
 
