@@ -1,4 +1,6 @@
-﻿using SidiaGame.PlayerCode;
+﻿using SidiaGame.gameMenu;
+using SidiaGame.GroundScripts;
+using SidiaGame.PlayerCode;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,30 +11,115 @@ namespace SidiaGame.GM
 {
     public class GameplayController : MonoBehaviour
     {
-        public GameObject HUD;
-        public GameObject DicesPlayerOne,DicesplayerTwo;
-        public Transform[] SpawnsPlayerOne,SpawnsPlayerTwo;
-        public Camera _camdices;
+        /// <summary>
+        /// MainCamera
+        /// </summary>
+        public CamFollow _cam;
 
-        public int PlayerTurn;
+        /// <summary>
+        /// Camera of dices roll
+        /// </summary>
+        public Camera _camdices;
+        /// <summary>
+        /// Manager of tiles
+        /// </summary>
+        public TilesManager groundTiles;
+
+        /// <summary>
+        /// HUD of game
+        /// </summary>
+        public GameObject HUD;
+
+        /// <summary>
+        /// Dices Of players
+        /// </summary>
+        public GameObject DicesPlayerOne,DicesplayerTwo;
+
+        /// <summary>
+        /// Spawns of dices
+        /// </summary>
+        public Transform[] SpawnsPlayerOne,SpawnsPlayerTwo;
+        
+        /// <summary>
+        /// Atual player turn
+        /// </summary>
+        [HideInInspector]
+        public int PlayerTurn=1;
+
+        /// <summary>
+        /// Number of dices with a result after roll
+        /// </summary>
+        [HideInInspector]
         public int DicesStoped;
+
+        /// <summary>
+        /// List with the result of the dice rolls
+        /// </summary>
         [HideInInspector]
         public List<DiceCode> PlayerOneResult, PlayerTwoResult;
 
+        /// <summary>
+        ///Players!
+        /// </summary>
+        [HideInInspector]
         public CharacterManager P1, P2;
 
+        /// <summary>
+        /// Points of battle dices
+        /// </summary>
         int points1, points2;
 
-
+        /// <summary>
+        /// Hud animator effect
+        /// </summary>
         public Animator Hudeffect;
-        public int atualwinner;
-        private void Start()
-        {
-            //RollDices();
-        }
 
+        /// <summary>
+        /// Winner of roll dices
+        /// </summary>
+        int atualwinner;
+
+        /// <summary>
+        /// Confirm End the battle
+        /// </summary>
+        bool EndBattle;
+        //
+
+
+        
+      
         private void Update()
         {
+            #region Camfollow
+            if (PlayerTurn%2 == 0 && P1 != null)
+            {
+                _cam.Alvo = P2.gameObject;
+            }
+            else if(P1!=null)
+            {
+                _cam.Alvo = P1.gameObject;
+            }
+            #endregion
+            #region EndBattle
+            if (P1 != null)
+            {
+                if (P1.Death == true && EndBattle == false)
+                {
+                    EndBattle = true;
+                    Hudeffect.SetInteger("end", 2);
+                    GetComponent<AudioSource>().enabled = true;
+                    Destroy(GetComponent<GameplayController>());
+                }
+                if (P2.Death == true && EndBattle == false)
+                {
+                    EndBattle = true;
+                    Hudeffect.SetInteger("end", 1);
+                    GetComponent<AudioSource>().enabled = true;
+                    Destroy(GetComponent<GameplayController>());
+                }
+
+            }
+            #endregion
             if (DicesStoped > 5)
             {
                 DicesStoped = 0;
@@ -94,7 +181,7 @@ namespace SidiaGame.GM
         {
             if (points1 == points2)
             {
-                //Empate
+               
                 if (PlayerTurn % 2 == 0)
                 {
                     Hudeffect.SetInteger("winner", 2);
@@ -119,9 +206,11 @@ namespace SidiaGame.GM
                     atualwinner = 2;
                 }
             }
+
             yield return new WaitForSeconds(2.9f);
+
             Hudeffect.SetInteger("winner", 0);
-            _camdices.enabled = false;
+            _camdices.gameObject.SetActive(false);
             if (atualwinner == 1)
                 P1.ConfirmAtack(P2);
             else
@@ -132,20 +221,25 @@ namespace SidiaGame.GM
             foreach (DiceCode dices in PlayerTwoResult)
                 Destroy(dices.gameObject);
 
+            P1.RealizeAction();
+            P2.RealizeAction();
             points1 = 0;
             points2 = 0;
           
             HUD.SetActive(true);
         }
 
-        public void /)
+        public void ChangeTurn()
         {
-            Hudeffect.SetTrigger("endphase");
             PlayerTurn++;
+            
+            groundTiles.RewindGround();
+            Hudeffect.SetTrigger("endphase");
+           
             if(PlayerTurn%2 == 0)
-                P2.OnChangeTurn();
-            else
                 P1.OnChangeTurn();
+            else
+                P2.OnChangeTurn();
 
 
         }
@@ -165,7 +259,7 @@ namespace SidiaGame.GM
             PlayerTwoResult.Clear();
             yield return new WaitForSeconds(1.75f);
             Hudeffect.SetBool("battle", false);
-            _camdices.enabled = true;
+            _camdices.gameObject.SetActive(true);
             for (int i = 0; i < SpawnsPlayerOne.Length; i++)
             {
                 PlayerOneResult.Add(Instantiate(DicesPlayerOne, SpawnsPlayerOne[i].position, new Quaternion(Random.Range(0, 180), Random.Range(0, 180), Random.Range(0, 180), Random.Range(0, 180))).GetComponent<DiceCode>());

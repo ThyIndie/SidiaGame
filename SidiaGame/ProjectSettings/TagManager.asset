@@ -6,6 +6,8 @@ TagManager:
   tags:
   - Solo
   - Tile
+  - empty
+  - busy
   layers:
   - Default
   - TransparentFX
