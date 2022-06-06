@@ -1140,8 +1140,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   GM:
     Health: 100
-    Atack: 20
-    AtackMultiply: 40
+    Atack: 10
+    AtackMultiply: 20
     Offset: {x: 0, y: 0.5, z: 0}
   Mylife: {fileID: 0}
   ParticleShotExit: {fileID: 8713798008350280854}

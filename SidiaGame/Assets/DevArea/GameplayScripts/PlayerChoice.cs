@@ -59,7 +59,10 @@ namespace SidiaGame.gameMenu
             }
             AtualPlayer++;
         }
-      
+      public void ResetAtualPlayer()
+        {
+            AtualPlayer = 1;
+        }
 
         IEnumerator LoadBattle()
         {

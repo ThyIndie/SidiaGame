@@ -1,4 +1,5 @@
 ﻿using SidiaGame.GM;
+using SidiaGame.GroundScripts;
 using System.Collections;
 using System.Collections.Generic;
 using TMPro;
@@ -51,9 +52,9 @@ namespace SidiaGame.PlayerCode
         #endregion
         #region AtackArea
         bool AtackOpen;
-     
-        #endregion
 
+        #endregion
+  
 
         #region InternalControllers
         float HorizontalMove() => Input.GetAxisRaw("Horizontal");
@@ -110,6 +111,8 @@ namespace SidiaGame.PlayerCode
 
         [SerializeField] GameObject WalkEffect;
 
+        int MaxLife;
+       
         
 
         private void Start()
@@ -121,8 +124,8 @@ namespace SidiaGame.PlayerCode
         void SetConfigurations()
         {
             //SetLife And atack Limits
-            GM.Health = Mathf.Clamp(GM.Health, 0, GM.Health);
-            GM.Atack = Mathf.Clamp(GM.Atack, 0, GM.Atack);
+
+            MaxLife = GM.Health;
             //
             ButtonAtack = GameObject.Find("AtackButton");
             EndPhase = GameObject.Find("EndButton");
@@ -166,7 +169,8 @@ namespace SidiaGame.PlayerCode
                 GetComponent<CharacterManager>().enabled = false;
                 Death = true;
             }
-            
+            if (GM.Health > MaxLife)
+                GM.Health = MaxLife;
                
             
 
@@ -251,6 +255,7 @@ namespace SidiaGame.PlayerCode
                 {
                     //Atack
                     _ground.transform.GetComponent<Renderer>().material.color = Color.white;
+                    _ground.transform.GetComponent<Tiles>().PickupItem();
                     GM.Atack = GM.AtackMultiply;
                     StartCoroutine(PickUpItem("Atack X2"));
                 }
@@ -258,6 +263,7 @@ namespace SidiaGame.PlayerCode
                 {
                     //Life
                     _ground.transform.GetComponent<Renderer>().material.color = Color.white;
+                    _ground.transform.GetComponent<Tiles>().PickupItem();
                     GM.Health += 10;
                     StartCoroutine(PickUpItem("Health + 10"));
                 }
@@ -265,6 +271,7 @@ namespace SidiaGame.PlayerCode
                 {
                     //Move
                     _ground.transform.GetComponent<Renderer>().material.color = Color.white;
+                    _ground.transform.GetComponent<Tiles>().PickupItem();
                     Move++;
                     StartCoroutine(PickUpItem("+1 Movement"));
                 }
@@ -353,11 +360,15 @@ namespace SidiaGame.PlayerCode
         }
         public void SetDamage(int _damage)
         {
-            GM.Atack = GM.AtackMultiply / 2;
-            GM.Health -= _damage;
+            StartCoroutine(ApplyDamage(_damage));
 
         }
-
+        IEnumerator ApplyDamage(int _damage)
+        {
+            yield return new WaitForSeconds(1);
+            GM.Atack = GM.AtackMultiply / 2;
+            GM.Health -= _damage;
+        }
         public void OnChangeTurn()
         {
             GM.Atack = GM.AtackMultiply / 2;

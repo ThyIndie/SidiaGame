@@ -4,7 +4,7 @@ using SidiaGame.PlayerCode;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-
+using UnityEngine.SceneManagement;
 namespace SidiaGame.GroundScripts
 {
     public class TilesManager : MonoBehaviour
@@ -53,6 +53,14 @@ namespace SidiaGame.GroundScripts
 
         }
        
+        public void ReturnMenu()
+        {
+            SceneManager.LoadSceneAsync("Menu");
+        }
+         public void PlayAgain()
+        {
+            SceneManager.LoadSceneAsync("Battle");
+        }
 
         public void RewindGround()
         {
@@ -101,7 +109,8 @@ namespace SidiaGame.GroundScripts
                     if(GM.GroundTiles[index].GetComponent<Renderer>().material.color == Color.white && GM.GroundTiles[index].transform.tag != "busy")
                        GM.GroundTiles[index].GetComponent<Renderer>().material = MaterialColor[Colors[index]];
                     StartCoroutine(PaintGround(GM.SetSpeed, index + 1, true));
-
+                    if(GM.GroundTiles[index].GetComponent<Tiles>() != null)
+                    GM.GroundTiles[index].GetComponent<Tiles>().Spawnar();
                 }
             }
             else
@@ -112,13 +121,15 @@ namespace SidiaGame.GroundScripts
                     GM.GroundTiles[index].SetActive(true);
                     GM.GroundTiles[index].GetComponent<Renderer>().material = MaterialColor[Colors[index]];
                     StartCoroutine(PaintGround(GM.SetSpeed, index + 1,false));
-
+                    if (GM.GroundTiles[index].GetComponent<Tiles>() != null)
+                        GM.GroundTiles[index].GetComponent<Tiles>().Spawnar();
                 }
                 else
                 {
                     SpawnPlayer(0);
                 }
             }
+          
         }
 
         void SpawnPlayer(int Soldier)
@@ -149,6 +160,7 @@ namespace SidiaGame.GroundScripts
         IEnumerator Fight()
         {
             yield return new WaitForSeconds(0.5f);
+           
             ButtonAtack.SetActive(false);
             EndPhase.SetActive(false);
         }

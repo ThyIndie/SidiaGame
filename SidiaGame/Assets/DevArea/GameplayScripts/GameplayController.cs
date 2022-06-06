@@ -108,6 +108,7 @@ namespace SidiaGame.GM
                     EndBattle = true;
                     Hudeffect.SetInteger("end", 2);
                     GetComponent<AudioSource>().enabled = true;
+                    HUD.SetActive(false);
                     Destroy(GetComponent<GameplayController>());
                 }
                 if (P2.Death == true && EndBattle == false)
@@ -115,6 +116,7 @@ namespace SidiaGame.GM
                     EndBattle = true;
                     Hudeffect.SetInteger("end", 1);
                     GetComponent<AudioSource>().enabled = true;
+                    HUD.SetActive(false);
                     Destroy(GetComponent<GameplayController>());
                 }
 
